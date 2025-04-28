@@ -11,6 +11,13 @@ interface Post {
   }
   views: number
   userId: number
+  author?: User
+}
+
+interface User {
+  id: number
+  image: string
+  username: string
 }
 
 interface PostsStoreState {

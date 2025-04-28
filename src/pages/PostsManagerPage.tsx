@@ -27,6 +27,7 @@ import {
 import { usePostsStore } from "../features/posts/model/store.ts"
 import { useQueryParams } from "../features/posts/model/useQueryParams.ts"
 import { Highlight } from "../shared/ui/Highlight.tsx"
+import { useDialogStore } from "../features/dialog/model/store.ts"
 
 const PostsManager = () => {
   const {
@@ -50,9 +51,11 @@ const PostsManager = () => {
   const selectedPost = usePostsStore((state) => state.selectedPost)
   const { setPosts, setTotal, setSelectedPost } = usePostsStore()
 
+  const showAddDialog = useDialogStore((state) => state.showAddDialog)
+  const showEditDialog = useDialogStore((state) => state.showEditDialog)
+  const { setShowAddDialog, setShowEditDialog } = useDialogStore()
+
   // 상태 관리
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useState(false)
   const [newPost, setNewPost] = useState({ title: "", body: "", userId: 1 })
   const [loading, setLoading] = useState(false)
   const [tags, setTags] = useState([])
