@@ -1,7 +1,7 @@
 import React from "react"
 
 interface HighlightProps {
-  text: string
+  text?: string
   highlight: string
 }
 
