@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Edit2, MessageSquare, Plus, Search, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
+import { Edit2, Plus, Search, ThumbsUp, Trash2 } from "lucide-react"
 import {
   Button,
   Card,
@@ -16,18 +16,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   Textarea,
 } from "../shared/ui"
-import { usePostsStore } from "../features/posts/model/store.ts"
+import { usePostsStore } from "../features/posts/model/postsStore.ts"
 import { useQueryParams } from "../features/posts/model/useQueryParams.ts"
 import { Highlight } from "../shared/ui/Highlight.tsx"
-import { useDialogStore } from "../features/dialog/model/store.ts"
+import { usePostDialogStore } from "../features/posts/model/postDialogStore.ts"
+import { useCommentsStore } from "../features/comments/model/commentStore.ts"
+import { useUsersStore } from "../features/user/model/usersStore.ts"
+import { useUserDialogStore } from "../features/user/model/userDialogStore.ts"
+import { PostsTable } from "../features/posts/ui/PostsTable.tsx"
+import { useCommentDialogStore } from "../features/comments/model/commentDialogStore.ts"
 
 const PostsManager = () => {
   const {
@@ -49,24 +48,32 @@ const PostsManager = () => {
   const posts = usePostsStore((state) => state.posts)
   const total = usePostsStore((state) => state.total)
   const selectedPost = usePostsStore((state) => state.selectedPost)
-  const { setPosts, setTotal, setSelectedPost } = usePostsStore()
+  const newPost = usePostsStore((state) => state.newPost)
+  const tags = usePostsStore((state) => state.tags)
+  const { setPosts, setTotal, setSelectedPost, setNewPost, setTags } = usePostsStore()
 
-  const showAddDialog = useDialogStore((state) => state.showAddDialog)
-  const showEditDialog = useDialogStore((state) => state.showEditDialog)
-  const { setShowAddDialog, setShowEditDialog } = useDialogStore()
+  const showPostAddDialog = usePostDialogStore((state) => state.showPostAddDialog)
+  const showPostEditDialog = usePostDialogStore((state) => state.showPostEditDialog)
+  const showPostDetailDialog = usePostDialogStore((state) => state.showPostDetailDialog)
+  const { setShowPostAddDialog, setShowPostEditDialog, setShowPostDetailDialog } = usePostDialogStore()
+
+  const comments = useCommentsStore((state) => state.comments)
+  const newComment = useCommentsStore((state) => state.newComment)
+  const selectedComment = useCommentsStore((state) => state.selectedComment)
+  const { setComments, setNewComment, setSelectedComment } = useCommentsStore()
+
+  const selectedUser = useUsersStore((state) => state.selectedUser)
+  const { setSelectedUser } = useUsersStore()
+
+  const showUserDialog = useUserDialogStore((state) => state.showUserDialog)
+  const { setShowUserDialog } = useUserDialogStore()
+
+  const showAddCommentDialog = useCommentDialogStore((state) => state.showAddCommentDialog)
+  const showEditCommentDialog = useCommentDialogStore((state) => state.showEditCommentDialog)
+  const { setShowAddCommentDialog, setShowEditCommentDialog } = useCommentDialogStore()
 
   // 상태 관리
-  const [newPost, setNewPost] = useState({ title: "", body: "", userId: 1 })
   const [loading, setLoading] = useState(false)
-  const [tags, setTags] = useState([])
-  const [comments, setComments] = useState({})
-  const [selectedComment, setSelectedComment] = useState(null)
-  const [newComment, setNewComment] = useState({ body: "", postId: null, userId: 1 })
-  const [showAddCommentDialog, setShowAddCommentDialog] = useState(false)
-  const [showEditCommentDialog, setShowEditCommentDialog] = useState(false)
-  const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
-  const [showUserModal, setShowUserModal] = useState(false)
-  const [selectedUser, setSelectedUser] = useState(null)
 
   // URL 업데이트 함수
   // 게시물 가져오기
@@ -166,7 +173,7 @@ const PostsManager = () => {
       })
       const data = await response.json()
       setPosts([data, ...posts])
-      setShowAddDialog(false)
+      setShowPostAddDialog(false)
       setNewPost({ title: "", body: "", userId: 1 })
     } catch (error) {
       console.error("게시물 추가 오류:", error)
@@ -183,7 +190,7 @@ const PostsManager = () => {
       })
       const data = await response.json()
       setPosts(posts.map((post) => (post.id === data.id ? data : post)))
-      setShowEditDialog(false)
+      setShowPostEditDialog(false)
     } catch (error) {
       console.error("게시물 업데이트 오류:", error)
     }
@@ -305,7 +312,7 @@ const PostsManager = () => {
       const response = await fetch(`/api/users/${user.id}`)
       const userData = await response.json()
       setSelectedUser(userData)
-      setShowUserModal(true)
+      setShowUserDialog(true)
     } catch (error) {
       console.error("사용자 정보 가져오기 오류:", error)
     }
@@ -323,88 +330,6 @@ const PostsManager = () => {
     }
     updateURL()
   }, [skip, limit, sortBy, sortOrder, selectedTag])
-
-  // 게시물 테이블 렌더링
-  const renderPostTable = () => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[50px]">ID</TableHead>
-          <TableHead>제목</TableHead>
-          <TableHead className="w-[150px]">작성자</TableHead>
-          <TableHead className="w-[150px]">반응</TableHead>
-          <TableHead className="w-[150px]">작업</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {posts.map((post) => (
-          <TableRow key={post.id}>
-            <TableCell>{post.id}</TableCell>
-            <TableCell>
-              <div className="space-y-1">
-                <div>
-                  <Highlight text={post.title} highlight={searchQuery} />
-                </div>
-
-                <div className="flex flex-wrap gap-1">
-                  {post.tags?.map((tag) => (
-                    <span
-                      key={tag}
-                      className={`px-1 text-[9px] font-semibold rounded-[4px] cursor-pointer ${
-                        selectedTag === tag
-                          ? "text-white bg-blue-500 hover:bg-blue-600"
-                          : "text-blue-800 bg-blue-100 hover:bg-blue-200"
-                      }`}
-                      onClick={() => {
-                        setSelectedTag(tag)
-                        updateURL()
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center space-x-2 cursor-pointer" onClick={() => openUserModal(post.author)}>
-                <img src={post.author?.image} alt={post.author?.username} className="w-8 h-8 rounded-full" />
-                <span>{post.author?.username}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <ThumbsUp className="w-4 h-4" />
-                <span>{post.reactions?.likes || 0}</span>
-                <ThumbsDown className="w-4 h-4" />
-                <span>{post.reactions?.dislikes || 0}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => openPostDetail(post)}>
-                  <MessageSquare className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedPost(post)
-                    setShowEditDialog(true)
-                  }}
-                >
-                  <Edit2 className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => deletePost(post.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  )
 
   // 댓글 렌더링
   const renderComments = (postId) => (
@@ -461,7 +386,7 @@ const PostsManager = () => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>게시물 관리자</span>
-          <Button onClick={() => setShowAddDialog(true)}>
+          <Button onClick={() => setShowPostAddDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             게시물 추가
           </Button>
@@ -526,7 +451,7 @@ const PostsManager = () => {
           </div>
 
           {/* 게시물 테이블 */}
-          {loading ? <div className="flex justify-center p-4">로딩 중...</div> : renderPostTable()}
+          {loading ? <div className="flex justify-center p-4">로딩 중...</div> : <PostsTable />}
 
           {/* 페이지네이션 */}
           <div className="flex justify-between items-center">
@@ -557,7 +482,7 @@ const PostsManager = () => {
       </CardContent>
 
       {/* 게시물 추가 대화상자 */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showPostAddDialog} onOpenChange={setShowPostAddDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>새 게시물 추가</DialogTitle>
@@ -586,7 +511,7 @@ const PostsManager = () => {
       </Dialog>
 
       {/* 게시물 수정 대화상자 */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+      <Dialog open={showPostEditDialog} onOpenChange={setShowPostEditDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>게시물 수정</DialogTitle>
@@ -660,7 +585,7 @@ const PostsManager = () => {
       </Dialog>
 
       {/* 사용자 모달 */}
-      <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
+      <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>사용자 정보</DialogTitle>
