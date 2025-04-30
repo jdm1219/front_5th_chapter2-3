@@ -1,24 +1,5 @@
 import { create } from "zustand"
-
-interface Post {
-  id: number
-  title: string
-  body: string
-  tags: string[]
-  reactions: {
-    likes: number
-    dislikes: number
-  }
-  views: number
-  userId: number
-  author?: User
-}
-
-interface User {
-  id: number
-  image: string
-  username: string
-}
+import { Post } from "../../../entities/posts/model/types.ts"
 
 interface PostsStoreState {
   posts: Post[]
