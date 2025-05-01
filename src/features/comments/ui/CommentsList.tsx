@@ -45,7 +45,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({ postId }) => {
       {
         id,
         postId,
-        likes: comments.find((comment) => comment.id === id)!.likes + 1,
+        likes: (comments.find((comment) => comment.id === id)?.likes || 0) + 1,
       },
       {
         onSuccess: (data) => {

@@ -15,4 +15,11 @@ export interface CommentsResponse {
   total: number
 }
 
-export type NewComment = Omit<Comment, "id" | "likes">
+export type NewComment = Pick<Comment, "body" | "postId" | "userId">
+
+export interface AddCommentResponse {
+  body: string
+  id: number
+  postId: number
+  user: { id: number; username: string; fullName: string }
+}

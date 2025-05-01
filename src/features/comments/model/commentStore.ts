@@ -12,7 +12,11 @@ interface CommentsStoreState {
 
 interface CommentsStoreAction {
   setComments: (comments: (currentComment: CommentsStoreState["comments"]) => CommentsStoreState["comments"]) => void
-  setNewComment: (comments: (NewComment: CommentsStoreState["newComment"]) => CommentsStoreState["newComment"]) => void
+  setNewComment: (
+    comments:
+      | ((NewComment: CommentsStoreState["newComment"]) => CommentsStoreState["newComment"])
+      | CommentsStoreState["newComment"],
+  ) => void
   setSelectedComment: (selectedComment: Comment) => void
 }
 

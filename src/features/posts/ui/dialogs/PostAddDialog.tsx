@@ -15,7 +15,7 @@ export const PostAddDialog: React.FC = () => {
   const { mutate } = useAddPostMutation()
 
   // 게시물 추가
-  const addPost = async () => {
+  const addPost = () => {
     mutate(newPost, {
       onSuccess: (data) => {
         setShowPostAddDialog(false)

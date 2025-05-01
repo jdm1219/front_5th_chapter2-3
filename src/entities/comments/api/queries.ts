@@ -1,4 +1,4 @@
-import { Comment, CommentsResponse, NewComment } from "../model/types.ts"
+import { AddCommentResponse, Comment, CommentsResponse, NewComment } from "../model/types.ts"
 
 export const commentApi = {
   getComments: async (postId: number): Promise<CommentsResponse> => {
@@ -6,7 +6,7 @@ export const commentApi = {
     return response.json()
   },
 
-  addComment: async (newComment: NewComment): Promise<Comment> => {
+  addComment: async (newComment: NewComment): Promise<AddCommentResponse> => {
     const response = await fetch("/api/comments/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -15,7 +15,7 @@ export const commentApi = {
     return response.json()
   },
 
-  updateComment: async (comment: Comment): Promise<Comment> => {
+  updateComment: async (comment: Comment): Promise<AddCommentResponse> => {
     const response = await fetch(`/api/comments/${comment.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

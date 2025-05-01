@@ -16,21 +16,20 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Textarea,
 } from "../shared/ui"
 import { usePostsStore } from "../features/posts/model/postsStore.ts"
 import { useQueryParamsStore } from "../features/posts/model/queryParamsStore.ts"
 import { usePostDialogStore } from "../features/posts/model/postDialogStore.ts"
-import { useCommentsStore } from "../features/comments/model/commentStore.ts"
 import { useUsersStore } from "../features/user/model/usersStore.ts"
 import { useUserDialogStore } from "../features/user/model/userDialogStore.ts"
 import { PostsTable } from "../features/posts/ui/table/PostsTable.tsx"
-import { useCommentDialogStore } from "../features/comments/model/commentDialogStore.ts"
 import { Pagination } from "../features/posts/ui/Pagination.tsx"
 import { useSyncQueryParams } from "../features/posts/model/useSyncQueryParams.ts"
 import { PostAddDialog } from "../features/posts/ui/dialogs/PostAddDialog.tsx"
 import { PostEditDialog } from "../features/posts/ui/dialogs/PostEditDialog.tsx"
 import { PostDetailDialog } from "../features/posts/ui/dialogs/PostDetailDialog.tsx"
+import { CommentAddDialog } from "../features/comments/ui/dialogs/CommentAddDialog.tsx"
+import { CommentEditDialog } from "../features/comments/ui/dialogs/CommentEditDialog.tsx"
 
 const PostsManager: React.FC = () => {
   useSyncQueryParams()
@@ -52,18 +51,10 @@ const PostsManager: React.FC = () => {
 
   const { setShowPostAddDialog } = usePostDialogStore()
 
-  const newComment = useCommentsStore((state) => state.newComment)
-  const selectedComment = useCommentsStore((state) => state.selectedComment)
-  const { setComments, setNewComment, setSelectedComment } = useCommentsStore()
-
   const selectedUser = useUsersStore((state) => state.selectedUser)
 
   const showUserDialog = useUserDialogStore((state) => state.showUserDialog)
   const { setShowUserDialog } = useUserDialogStore()
-
-  const showAddCommentDialog = useCommentDialogStore((state) => state.showAddCommentDialog)
-  const showEditCommentDialog = useCommentDialogStore((state) => state.showEditCommentDialog)
-  const { setShowAddCommentDialog, setShowEditCommentDialog } = useCommentDialogStore()
 
   // 상태 관리
   const [loading, setLoading] = useState(false)
@@ -156,45 +147,6 @@ const PostsManager: React.FC = () => {
     setLoading(false)
   }
 
-  // 댓글 추가
-  const addComment = async () => {
-    try {
-      const response = await fetch("/api/comments/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newComment),
-      })
-      const data = await response.json()
-      setComments((prev) => ({
-        ...prev,
-        [data.postId]: [...(prev[data.postId] || []), data],
-      }))
-      setShowAddCommentDialog(false)
-      setNewComment({ body: "", postId: null, userId: 1 })
-    } catch (error) {
-      console.error("댓글 추가 오류:", error)
-    }
-  }
-
-  // 댓글 업데이트
-  const updateComment = async () => {
-    try {
-      const response = await fetch(`/api/comments/${selectedComment.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: selectedComment.body }),
-      })
-      const data = await response.json()
-      setComments((prev) => ({
-        ...prev,
-        [data.postId]: prev[data.postId].map((comment) => (comment.id === data.id ? data : comment)),
-      }))
-      setShowEditCommentDialog(false)
-    } catch (error) {
-      console.error("댓글 업데이트 오류:", error)
-    }
-  }
-
   useEffect(() => {
     fetchTags()
   }, [])
@@ -285,39 +237,9 @@ const PostsManager: React.FC = () => {
       <PostEditDialog />
       <PostDetailDialog />
 
-      {/* 댓글 추가 대화상자 */}
-      <Dialog open={showAddCommentDialog} onOpenChange={setShowAddCommentDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>새 댓글 추가</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="댓글 내용"
-              value={newComment.body}
-              onChange={(e) => setNewComment({ ...newComment, body: e.target.value })}
-            />
-            <Button onClick={addComment}>댓글 추가</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 댓글 수정 대화상자 */}
-      <Dialog open={showEditCommentDialog} onOpenChange={setShowEditCommentDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>댓글 수정</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="댓글 내용"
-              value={selectedComment?.body || ""}
-              onChange={(e) => setSelectedComment({ ...selectedComment, body: e.target.value })}
-            />
-            <Button onClick={updateComment}>댓글 업데이트</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* 댓글 Dialog */}
+      <CommentAddDialog />
+      <CommentEditDialog />
 
       {/* 사용자 모달 */}
       <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
