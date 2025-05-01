@@ -6,10 +6,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   Input,
   Select,
   SelectContent,
@@ -20,8 +16,6 @@ import {
 import { usePostsStore } from "../features/posts/model/postsStore.ts"
 import { useQueryParamsStore } from "../features/posts/model/queryParamsStore.ts"
 import { usePostDialogStore } from "../features/posts/model/postDialogStore.ts"
-import { useUsersStore } from "../features/user/model/usersStore.ts"
-import { useUserDialogStore } from "../features/user/model/userDialogStore.ts"
 import { PostsTable } from "../features/posts/ui/table/PostsTable.tsx"
 import { Pagination } from "../features/posts/ui/Pagination.tsx"
 import { useSyncQueryParams } from "../features/posts/model/useSyncQueryParams.ts"
@@ -30,6 +24,7 @@ import { PostEditDialog } from "../features/posts/ui/dialogs/PostEditDialog.tsx"
 import { PostDetailDialog } from "../features/posts/ui/dialogs/PostDetailDialog.tsx"
 import { CommentAddDialog } from "../features/comments/ui/dialogs/CommentAddDialog.tsx"
 import { CommentEditDialog } from "../features/comments/ui/dialogs/CommentEditDialog.tsx"
+import { UserDetailDialog } from "../features/user/ui/dialogs/UserDetailDialog.tsx"
 
 const PostsManager: React.FC = () => {
   useSyncQueryParams()
@@ -48,13 +43,7 @@ const PostsManager: React.FC = () => {
 
   const tags = usePostsStore((state) => state.tags)
   const { setPosts, setTotal, setTags } = usePostsStore()
-
   const { setShowPostAddDialog } = usePostDialogStore()
-
-  const selectedUser = useUsersStore((state) => state.selectedUser)
-
-  const showUserDialog = useUserDialogStore((state) => state.showUserDialog)
-  const { setShowUserDialog } = useUserDialogStore()
 
   // 상태 관리
   const [loading, setLoading] = useState(false)
@@ -241,39 +230,8 @@ const PostsManager: React.FC = () => {
       <CommentAddDialog />
       <CommentEditDialog />
 
-      {/* 사용자 모달 */}
-      <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>사용자 정보</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <img src={selectedUser?.image} alt={selectedUser?.username} className="w-24 h-24 rounded-full mx-auto" />
-            <h3 className="text-xl font-semibold text-center">{selectedUser?.username}</h3>
-            <div className="space-y-2">
-              <p>
-                <strong>이름:</strong> {selectedUser?.firstName} {selectedUser?.lastName}
-              </p>
-              <p>
-                <strong>나이:</strong> {selectedUser?.age}
-              </p>
-              <p>
-                <strong>이메일:</strong> {selectedUser?.email}
-              </p>
-              <p>
-                <strong>전화번호:</strong> {selectedUser?.phone}
-              </p>
-              <p>
-                <strong>주소:</strong> {selectedUser?.address?.address}, {selectedUser?.address?.city},{" "}
-                {selectedUser?.address?.state}
-              </p>
-              <p>
-                <strong>직장:</strong> {selectedUser?.company?.name} - {selectedUser?.company?.title}
-              </p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* 사용자 Dialog */}
+      <UserDetailDialog />
     </Card>
   )
 }
