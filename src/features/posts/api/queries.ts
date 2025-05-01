@@ -1,11 +1,12 @@
-import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { postApi } from '../../../entities/posts/api';
 import { NewPost, Post, PostsParams, PostsResponse } from "../../../entities/posts/model/types"
 import { postQueryKeys } from './queryKeys';
+import { CustomUseQueryOptions } from "../../../shared/model/types.ts"
 
 export const usePostsQuery = (
   params: PostsParams,
-  options?: UseQueryOptions<PostsResponse>
+  options?: CustomUseQueryOptions<PostsResponse>
 ) => {
   return useQuery({
     queryKey: postQueryKeys.list(params),
@@ -14,7 +15,7 @@ export const usePostsQuery = (
   });
 };
 
-export const useTagsQuery = (options?: UseQueryOptions<string[]>) => {
+export const useTagsQuery = (options?: CustomUseQueryOptions<string[]>) => {
   return useQuery({
     queryKey: postQueryKeys.tags(),
     queryFn: () => postApi.getTags(),
@@ -24,7 +25,7 @@ export const useTagsQuery = (options?: UseQueryOptions<string[]>) => {
 
 export const usePostsByTagQuery = (
   tag: string,
-  options?: UseQueryOptions<PostsResponse>
+  options?: CustomUseQueryOptions<PostsResponse>
 ) => {
   return useQuery({
     queryKey: postQueryKeys.byTag(tag),
@@ -35,7 +36,7 @@ export const usePostsByTagQuery = (
 
 export const useSearchPostsQuery = (
   searchQuery: string,
-  options?: UseQueryOptions<PostsResponse>
+  options?: CustomUseQueryOptions<PostsResponse>
 ) => {
   return useQuery({
     queryKey: postQueryKeys.search(searchQuery),

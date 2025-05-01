@@ -1,11 +1,12 @@
-import { useMutation, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { CommentsResponse, NewComment } from "../../../entities/comments/model/types.ts"
 import { commentQueryKeys } from "./queryKeys.ts"
 import { commentApi } from "../../../entities/comments/api"
+import { CustomUseQueryOptions } from "../../../shared/model/types.ts"
 
 export const useCommentsQuery = (
   postId: number,
-  options?: UseQueryOptions<CommentsResponse>
+  options?: CustomUseQueryOptions<CommentsResponse>
 ) => {
   return useQuery({
     queryKey: commentQueryKeys.byPost(postId),
@@ -14,7 +15,6 @@ export const useCommentsQuery = (
   });
 };
 
-// Comment Mutation Hooks
 export const useAddCommentMutation = () => {
   const queryClient = useQueryClient();
 

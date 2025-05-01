@@ -1,7 +1,7 @@
 import React from "react"
 
-import { Table, TableHeader, TableRow, TableHead, TableBody } from "../../../shared/ui"
-import { usePostsStore } from "../model/postsStore.ts"
+import { Table, TableHeader, TableRow, TableHead, TableBody } from "../../../../shared/ui"
+import { usePostsStore } from "../../model/postsStore.ts"
 import { PostsTableRow } from "./PostsTableRow.tsx"
 
 export const PostsTable: React.FC = () => {

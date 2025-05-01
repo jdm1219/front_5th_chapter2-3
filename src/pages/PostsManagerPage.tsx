@@ -25,7 +25,7 @@ import { usePostDialogStore } from "../features/posts/model/postDialogStore.ts"
 import { useCommentsStore } from "../features/comments/model/commentStore.ts"
 import { useUsersStore } from "../features/user/model/usersStore.ts"
 import { useUserDialogStore } from "../features/user/model/userDialogStore.ts"
-import { PostsTable } from "../features/posts/ui/PostsTable.tsx"
+import { PostsTable } from "../features/posts/ui/table/PostsTable.tsx"
 import { useCommentDialogStore } from "../features/comments/model/commentDialogStore.ts"
 
 const PostsManager = () => {

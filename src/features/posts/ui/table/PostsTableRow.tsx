@@ -1,15 +1,14 @@
-import { Button, TableCell, TableRow } from "../../../shared/ui"
-import { Highlight } from "../../../shared/ui/Highlight.tsx"
+import { Button, TableCell, TableRow } from "../../../../shared/ui"
+import { Highlight } from "../../../../shared/ui/Highlight.tsx"
 import { Edit2, MessageSquare, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
 import React from "react"
-import { Post } from "../../../entities/posts/model/types.ts"
-import { usePostsStore } from "../model/postsStore.ts"
-import { usePostDialogStore } from "../model/postDialogStore.ts"
-import { User } from "../../../entities/users/model/types.ts"
-import { useQueryParams } from "../model/useQueryParams.ts"
-import { useCommentsStore } from "../../comments/model/commentStore.ts"
-import { useUsersStore } from "../../user/model/usersStore.ts"
-import { useUserDialogStore } from "../../user/model/userDialogStore.ts"
+import { Post } from "../../../../entities/posts/model/types.ts"
+import { usePostsStore } from "../../model/postsStore.ts"
+import { usePostDialogStore } from "../../model/postDialogStore.ts"
+import { useQueryParams } from "../../model/useQueryParams.ts"
+import { useCommentsStore } from "../../../comments/model/commentStore.ts"
+import { useDeletePostMutation } from "../../api/queries.ts"
+import { UserModalCell } from "./UserModalCell.tsx"
 
 interface PostsTableRowProps {
   post: Post
@@ -25,8 +24,7 @@ export const PostsTableRow: React.FC<PostsTableRowProps> = ({ post }) => {
 
   const { setShowPostEditDialog, setShowPostDetailDialog } = usePostDialogStore()
 
-  const { setSelectedUser } = useUsersStore()
-  const { setShowUserDialog } = useUserDialogStore()
+  const { mutate: deletePostMutation } = useDeletePostMutation()
 
   const fetchComments = async (postId: number) => {
     if (comments[postId]) return // 이미 불러온 댓글이 있으면 다시 불러오지 않음
@@ -38,18 +36,6 @@ export const PostsTableRow: React.FC<PostsTableRowProps> = ({ post }) => {
       console.error("댓글 가져오기 오류:", error)
     }
   }
-  // 사용자 모달 열기
-  const openUserModal = async (user?: User) => {
-    if (!user) return
-    try {
-      const response = await fetch(`/api/users/${user.id}`)
-      const userData = await response.json()
-      setSelectedUser(userData)
-      setShowUserDialog(true)
-    } catch (error) {
-      console.error("사용자 정보 가져오기 오류:", error)
-    }
-  }
 
   // 게시물 상세 보기
   const openPostDetail = (post: Post) => {
@@ -59,14 +45,11 @@ export const PostsTableRow: React.FC<PostsTableRowProps> = ({ post }) => {
   }
 
   const deletePost = async (id: number) => {
-    try {
-      await fetch(`/api/posts/${id}`, {
-        method: "DELETE",
-      })
-      setPosts(posts.filter((post) => post.id !== id))
-    } catch (error) {
-      console.error("게시물 삭제 오류:", error)
-    }
+    deletePostMutation(id, {
+      onSuccess: () => {
+        setPosts(posts.filter((post) => post.id !== id))
+      },
+    })
   }
 
   return (
@@ -98,12 +81,7 @@ export const PostsTableRow: React.FC<PostsTableRowProps> = ({ post }) => {
           </div>
         </div>
       </TableCell>
-      <TableCell>
-        <div className="flex items-center space-x-2 cursor-pointer" onClick={() => openUserModal(post?.author)}>
-          <img src={post.author?.image} alt={post.author?.username} className="w-8 h-8 rounded-full" />
-          <span>{post.author?.username}</span>
-        </div>
-      </TableCell>
+      <UserModalCell post={post} />
       <TableCell>
         <div className="flex items-center gap-2">
           <ThumbsUp className="w-4 h-4" />
