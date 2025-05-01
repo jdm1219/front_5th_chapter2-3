@@ -1,11 +1,11 @@
 import { create } from "zustand"
-import { Post, Tag } from "../../../entities/posts/model/types.ts"
+import { NewPost, Post, Tag } from "../../../entities/posts/model/types.ts"
 
 interface PostsStoreState {
   posts: Post[]
   total: number
   selectedPost: Post | null
-  newPost: Pick<Post, 'title' | 'body' | 'userId'> | null
+  newPost: NewPost
   tags: Tag[]
 }
 
@@ -13,7 +13,7 @@ interface PostsStoreAction {
   setPosts: (posts: Post[]) => void
   setTotal: (total: number) => void
   setSelectedPost: (selectedPost: Post) => void
-  setNewPost: (newPost: Post) => void
+  setNewPost: (newPost: NewPost) => void
   setTags: (tags: Tag[]) => void
 }
 

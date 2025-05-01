@@ -1,8 +1,13 @@
 export interface Comment {
+  id: number
   title: string
   body: string
   postId?: number
   userId: number
+  likes: number
+  user?: {
+    username: string
+  }
 }
 
 export interface CommentsResponse {
@@ -10,8 +15,4 @@ export interface CommentsResponse {
   total: number
 }
 
-export interface NewComment {
-  body: string
-  postId: number
-  userId: number
-}
+export type NewComment = Omit<Comment, "id" | "likes">

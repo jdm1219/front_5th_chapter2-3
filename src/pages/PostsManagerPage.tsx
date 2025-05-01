@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Edit2, Plus, Search, ThumbsUp, Trash2 } from "lucide-react"
+import { Plus, Search } from "lucide-react"
 import {
   Button,
   Card,
@@ -20,7 +20,6 @@ import {
 } from "../shared/ui"
 import { usePostsStore } from "../features/posts/model/postsStore.ts"
 import { useQueryParamsStore } from "../features/posts/model/queryParamsStore.ts"
-import { Highlight } from "../shared/ui/Highlight.tsx"
 import { usePostDialogStore } from "../features/posts/model/postDialogStore.ts"
 import { useCommentsStore } from "../features/comments/model/commentStore.ts"
 import { useUsersStore } from "../features/user/model/usersStore.ts"
@@ -29,6 +28,9 @@ import { PostsTable } from "../features/posts/ui/table/PostsTable.tsx"
 import { useCommentDialogStore } from "../features/comments/model/commentDialogStore.ts"
 import { Pagination } from "../features/posts/ui/Pagination.tsx"
 import { useSyncQueryParams } from "../features/posts/model/useSyncQueryParams.ts"
+import { PostAddDialog } from "../features/posts/ui/dialogs/PostAddDialog.tsx"
+import { PostEditDialog } from "../features/posts/ui/dialogs/PostEditDialog.tsx"
+import { PostDetailDialog } from "../features/posts/ui/dialogs/PostDetailDialog.tsx"
 
 const PostsManager: React.FC = () => {
   useSyncQueryParams()
@@ -45,18 +47,11 @@ const PostsManager: React.FC = () => {
     setSelectedTag,
   } = useQueryParamsStore()
 
-  const posts = usePostsStore((state) => state.posts)
-  const selectedPost = usePostsStore((state) => state.selectedPost)
-  const newPost = usePostsStore((state) => state.newPost)
   const tags = usePostsStore((state) => state.tags)
-  const { setPosts, setTotal, setSelectedPost, setNewPost, setTags } = usePostsStore()
+  const { setPosts, setTotal, setTags } = usePostsStore()
 
-  const showPostAddDialog = usePostDialogStore((state) => state.showPostAddDialog)
-  const showPostEditDialog = usePostDialogStore((state) => state.showPostEditDialog)
-  const showPostDetailDialog = usePostDialogStore((state) => state.showPostDetailDialog)
-  const { setShowPostAddDialog, setShowPostEditDialog, setShowPostDetailDialog } = usePostDialogStore()
+  const { setShowPostAddDialog } = usePostDialogStore()
 
-  const comments = useCommentsStore((state) => state.comments)
   const newComment = useCommentsStore((state) => state.newComment)
   const selectedComment = useCommentsStore((state) => state.selectedComment)
   const { setComments, setNewComment, setSelectedComment } = useCommentsStore()
@@ -161,39 +156,6 @@ const PostsManager: React.FC = () => {
     setLoading(false)
   }
 
-  // 게시물 추가
-  const addPost = async () => {
-    try {
-      const response = await fetch("/api/posts/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPost),
-      })
-      const data = await response.json()
-      setPosts([data, ...posts])
-      setShowPostAddDialog(false)
-      setNewPost({ title: "", body: "", userId: 1 })
-    } catch (error) {
-      console.error("게시물 추가 오류:", error)
-    }
-  }
-
-  // 게시물 업데이트
-  const updatePost = async () => {
-    try {
-      const response = await fetch(`/api/posts/${selectedPost.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedPost),
-      })
-      const data = await response.json()
-      setPosts(posts.map((post) => (post.id === data.id ? data : post)))
-      setShowPostEditDialog(false)
-    } catch (error) {
-      console.error("게시물 업데이트 오류:", error)
-    }
-  }
-
   // 댓글 추가
   const addComment = async () => {
     try {
@@ -233,46 +195,6 @@ const PostsManager: React.FC = () => {
     }
   }
 
-  // 댓글 삭제
-  const deleteComment = async (id, postId) => {
-    try {
-      await fetch(`/api/comments/${id}`, {
-        method: "DELETE",
-      })
-      setComments((prev) => ({
-        ...prev,
-        [postId]: prev[postId].filter((comment) => comment.id !== id),
-      }))
-    } catch (error) {
-      console.error("댓글 삭제 오류:", error)
-    }
-  }
-
-  // 댓글 좋아요
-  const likeComment = async (id, postId) => {
-    try {
-      const response = await fetch(`/api/comments/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ likes: comments[postId].find((c) => c.id === id).likes + 1 }),
-      })
-      const data = await response.json()
-      setComments((prev) => ({
-        ...prev,
-        [postId]: prev[postId].map((comment) =>
-          comment.id === data.id
-            ? {
-                ...data,
-                likes: comment.likes + 1,
-              }
-            : comment,
-        ),
-      }))
-    } catch (error) {
-      console.error("댓글 좋아요 오류:", error)
-    }
-  }
-
   useEffect(() => {
     fetchTags()
   }, [])
@@ -284,56 +206,6 @@ const PostsManager: React.FC = () => {
       fetchPosts()
     }
   }, [skip, limit, sortBy, sortOrder, selectedTag])
-
-  // 댓글 렌더링
-  const renderComments = (postId) => (
-    <div className="mt-2">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold">댓글</h3>
-        <Button
-          size="sm"
-          onClick={() => {
-            setNewComment((prev) => ({ ...prev, postId }))
-            setShowAddCommentDialog(true)
-          }}
-        >
-          <Plus className="w-3 h-3 mr-1" />
-          댓글 추가
-        </Button>
-      </div>
-      <div className="space-y-1">
-        {comments[postId]?.map((comment) => (
-          <div key={comment.id} className="flex items-center justify-between text-sm border-b pb-1">
-            <div className="flex items-center space-x-2 overflow-hidden">
-              <span className="font-medium truncate">{comment.user.username}:</span>
-              <span className="truncate">
-                <Highlight text={comment.body} highlight={searchQuery} />
-              </span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="sm" onClick={() => likeComment(comment.id, postId)}>
-                <ThumbsUp className="w-3 h-3" />
-                <span className="ml-1 text-xs">{comment.likes}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedComment(comment)
-                  setShowEditCommentDialog(true)
-                }}
-              >
-                <Edit2 className="w-3 h-3" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => deleteComment(comment.id, postId)}>
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
 
   return (
     <Card className="w-full max-w-6xl mx-auto">
@@ -408,57 +280,10 @@ const PostsManager: React.FC = () => {
         </div>
       </CardContent>
 
-      {/* 게시물 추가 대화상자 */}
-      <Dialog open={showPostAddDialog} onOpenChange={setShowPostAddDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>새 게시물 추가</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="제목"
-              value={newPost.title}
-              onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-            />
-            <Textarea
-              rows={30}
-              placeholder="내용"
-              value={newPost.body}
-              onChange={(e) => setNewPost({ ...newPost, body: e.target.value })}
-            />
-            <Input
-              type="number"
-              placeholder="사용자 ID"
-              value={newPost.userId}
-              onChange={(e) => setNewPost({ ...newPost, userId: Number(e.target.value) })}
-            />
-            <Button onClick={addPost}>게시물 추가</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 게시물 수정 대화상자 */}
-      <Dialog open={showPostEditDialog} onOpenChange={setShowPostEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>게시물 수정</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="제목"
-              value={selectedPost?.title || ""}
-              onChange={(e) => setSelectedPost({ ...selectedPost, title: e.target.value })}
-            />
-            <Textarea
-              rows={15}
-              placeholder="내용"
-              value={selectedPost?.body || ""}
-              onChange={(e) => setSelectedPost({ ...selectedPost, body: e.target.value })}
-            />
-            <Button onClick={updatePost}>게시물 업데이트</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* 게시물 Dialog */}
+      <PostAddDialog />
+      <PostEditDialog />
+      <PostDetailDialog />
 
       {/* 댓글 추가 대화상자 */}
       <Dialog open={showAddCommentDialog} onOpenChange={setShowAddCommentDialog}>
@@ -490,23 +315,6 @@ const PostsManager: React.FC = () => {
               onChange={(e) => setSelectedComment({ ...selectedComment, body: e.target.value })}
             />
             <Button onClick={updateComment}>댓글 업데이트</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 게시물 상세 보기 대화상자 */}
-      <Dialog open={showPostDetailDialog} onOpenChange={setShowPostDetailDialog}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>
-              <Highlight text={selectedPost?.title} highlight={searchQuery} />
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>
-              <Highlight text={selectedPost?.body} highlight={searchQuery} />
-            </p>
-            {renderComments(selectedPost?.id)}
           </div>
         </DialogContent>
       </Dialog>
