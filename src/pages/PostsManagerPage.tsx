@@ -19,7 +19,7 @@ import {
   Textarea,
 } from "../shared/ui"
 import { usePostsStore } from "../features/posts/model/postsStore.ts"
-import { useQueryParams } from "../features/posts/model/useQueryParams.ts"
+import { useQueryParamsStore } from "../features/posts/model/queryParamsStore.ts"
 import { Highlight } from "../shared/ui/Highlight.tsx"
 import { usePostDialogStore } from "../features/posts/model/postDialogStore.ts"
 import { useCommentsStore } from "../features/comments/model/commentStore.ts"
@@ -27,13 +27,14 @@ import { useUsersStore } from "../features/user/model/usersStore.ts"
 import { useUserDialogStore } from "../features/user/model/userDialogStore.ts"
 import { PostsTable } from "../features/posts/ui/table/PostsTable.tsx"
 import { useCommentDialogStore } from "../features/comments/model/commentDialogStore.ts"
+import { Pagination } from "../features/posts/ui/Pagination.tsx"
+import { useSyncQueryParams } from "../features/posts/model/useSyncQueryParams.ts"
 
-const PostsManager = () => {
+const PostsManager: React.FC = () => {
+  useSyncQueryParams()
   const {
     skip,
-    setSkip,
     limit,
-    setLimit,
     searchQuery,
     setSearchQuery,
     sortBy,
@@ -42,11 +43,9 @@ const PostsManager = () => {
     setSortOrder,
     selectedTag,
     setSelectedTag,
-    updateURL,
-  } = useQueryParams()
+  } = useQueryParamsStore()
 
   const posts = usePostsStore((state) => state.posts)
-  const total = usePostsStore((state) => state.total)
   const selectedPost = usePostsStore((state) => state.selectedPost)
   const newPost = usePostsStore((state) => state.newPost)
   const tags = usePostsStore((state) => state.tags)
@@ -63,7 +62,6 @@ const PostsManager = () => {
   const { setComments, setNewComment, setSelectedComment } = useCommentsStore()
 
   const selectedUser = useUsersStore((state) => state.selectedUser)
-  const { setSelectedUser } = useUsersStore()
 
   const showUserDialog = useUserDialogStore((state) => state.showUserDialog)
   const { setShowUserDialog } = useUserDialogStore()
@@ -196,30 +194,6 @@ const PostsManager = () => {
     }
   }
 
-  // 게시물 삭제
-  const deletePost = async (id) => {
-    try {
-      await fetch(`/api/posts/${id}`, {
-        method: "DELETE",
-      })
-      setPosts(posts.filter((post) => post.id !== id))
-    } catch (error) {
-      console.error("게시물 삭제 오류:", error)
-    }
-  }
-
-  // 댓글 가져오기
-  const fetchComments = async (postId) => {
-    if (comments[postId]) return // 이미 불러온 댓글이 있으면 다시 불러오지 않음
-    try {
-      const response = await fetch(`/api/comments/post/${postId}`)
-      const data = await response.json()
-      setComments((prev) => ({ ...prev, [postId]: data.comments }))
-    } catch (error) {
-      console.error("댓글 가져오기 오류:", error)
-    }
-  }
-
   // 댓글 추가
   const addComment = async () => {
     try {
@@ -299,25 +273,6 @@ const PostsManager = () => {
     }
   }
 
-  // 게시물 상세 보기
-  const openPostDetail = (post) => {
-    setSelectedPost(post)
-    fetchComments(post.id)
-    setShowPostDetailDialog(true)
-  }
-
-  // 사용자 모달 열기
-  const openUserModal = async (user) => {
-    try {
-      const response = await fetch(`/api/users/${user.id}`)
-      const userData = await response.json()
-      setSelectedUser(userData)
-      setShowUserDialog(true)
-    } catch (error) {
-      console.error("사용자 정보 가져오기 오류:", error)
-    }
-  }
-
   useEffect(() => {
     fetchTags()
   }, [])
@@ -328,7 +283,6 @@ const PostsManager = () => {
     } else {
       fetchPosts()
     }
-    updateURL()
   }, [skip, limit, sortBy, sortOrder, selectedTag])
 
   // 댓글 렌더링
@@ -413,7 +367,6 @@ const PostsManager = () => {
               onValueChange={(value) => {
                 setSelectedTag(value)
                 fetchPostsByTag(value)
-                updateURL()
               }}
             >
               <SelectTrigger className="w-[180px]">
@@ -450,34 +403,8 @@ const PostsManager = () => {
             </Select>
           </div>
 
-          {/* 게시물 테이블 */}
           {loading ? <div className="flex justify-center p-4">로딩 중...</div> : <PostsTable />}
-
-          {/* 페이지네이션 */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span>표시</span>
-              <Select value={limit.toString()} onValueChange={(value) => setLimit(Number(value))}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="10" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="30">30</SelectItem>
-                </SelectContent>
-              </Select>
-              <span>항목</span>
-            </div>
-            <div className="flex gap-2">
-              <Button disabled={skip === 0} onClick={() => setSkip(Math.max(0, skip - limit))}>
-                이전
-              </Button>
-              <Button disabled={skip + limit >= total} onClick={() => setSkip(skip + limit)}>
-                다음
-              </Button>
-            </div>
-          </div>
+          <Pagination />
         </div>
       </CardContent>
 

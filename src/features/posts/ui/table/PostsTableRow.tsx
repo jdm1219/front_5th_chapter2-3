@@ -3,7 +3,7 @@ import { Highlight } from "../../../../shared/ui/Highlight.tsx"
 import { ThumbsDown, ThumbsUp } from "lucide-react"
 import React from "react"
 import { Post } from "../../../../entities/posts/model/types.ts"
-import { useQueryParams } from "../../model/useQueryParams.ts"
+import { useQueryParamsStore } from "../../model/queryParamsStore.ts"
 import { UserModalCell } from "./UserModalCell.tsx"
 import { ActionsCell } from "./ActionsCell.tsx"
 
@@ -12,7 +12,7 @@ interface PostsTableRowProps {
 }
 
 export const PostsTableRow: React.FC<PostsTableRowProps> = ({ post }) => {
-  const { searchQuery, selectedTag, setSelectedTag, updateURL } = useQueryParams()
+  const { searchQuery, selectedTag, setSelectedTag } = useQueryParamsStore()
 
   return (
     <TableRow key={post.id}>
@@ -34,7 +34,6 @@ export const PostsTableRow: React.FC<PostsTableRowProps> = ({ post }) => {
                 }`}
                 onClick={() => {
                   setSelectedTag(tag)
-                  updateURL()
                 }}
               >
                 {tag}
