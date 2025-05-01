@@ -1,8 +1,8 @@
-import { NewPost, Post, PostsParams, PostsResponse } from "../model/types.ts"
+import { NewPost, Post, PostsParams, PostsResponse, Tag } from "../model/types.ts"
 
 export const postApi = {
-  getPosts: async ({ limit, skip }: PostsParams): Promise<PostsResponse> => {
-    const response = await fetch(`/api/posts?limit=${limit}&skip=${skip}`)
+  getPosts: async ({ limit, skip, sortBy, sortOrder }: PostsParams): Promise<PostsResponse> => {
+    const response = await fetch(`/api/posts?limit=${limit}&skip=${skip}&sortBy=${sortBy}&order=${sortOrder}`)
     return response.json()
   },
 
@@ -11,7 +11,7 @@ export const postApi = {
     return response.json()
   },
 
-  getTags: async (): Promise<string[]> => {
+  getTags: async (): Promise<Tag[]> => {
     const response = await fetch("/api/posts/tags")
     return response.json()
   },

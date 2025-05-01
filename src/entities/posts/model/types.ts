@@ -30,4 +30,6 @@ export interface PostsResponse {
 export interface PostsParams {
   limit: number
   skip: number
+  sortBy: string
+  sortOrder: string
 }

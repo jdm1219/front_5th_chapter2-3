@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { postApi } from '../../../entities/posts/api';
-import { NewPost, Post, PostsParams, PostsResponse } from "../../../entities/posts/model/types"
+import { NewPost, Post, PostsParams, PostsResponse, Tag } from "../../../entities/posts/model/types"
 import { postQueryKeys } from './queryKeys';
 import { CustomUseQueryOptions } from "../../../shared/model/types.ts"
 
@@ -15,7 +15,7 @@ export const usePostsQuery = (
   });
 };
 
-export const useTagsQuery = (options?: CustomUseQueryOptions<string[]>) => {
+export const useTagsQuery = (options?: CustomUseQueryOptions<Tag[]>) => {
   return useQuery({
     queryKey: postQueryKeys.tags(),
     queryFn: () => postApi.getTags(),

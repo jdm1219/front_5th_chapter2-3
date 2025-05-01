@@ -1,18 +1,6 @@
-import React, { useEffect, useState } from "react"
-import { Plus, Search } from "lucide-react"
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../shared/ui"
+import React, { useEffect } from "react"
+import { Plus } from "lucide-react"
+import { Button, Card, CardContent, CardHeader, CardTitle } from "../shared/ui"
 import { usePostsStore } from "../features/posts/model/postsStore.ts"
 import { useQueryParamsStore } from "../features/posts/model/queryParamsStore.ts"
 import { usePostDialogStore } from "../features/posts/model/postDialogStore.ts"
@@ -25,128 +13,93 @@ import { PostDetailDialog } from "../features/posts/ui/dialogs/PostDetailDialog.
 import { CommentAddDialog } from "../features/comments/ui/dialogs/CommentAddDialog.tsx"
 import { CommentEditDialog } from "../features/comments/ui/dialogs/CommentEditDialog.tsx"
 import { UserDetailDialog } from "../features/user/ui/dialogs/UserDetailDialog.tsx"
+import { SearchFilters } from "../features/posts/ui/SearchFilters.tsx"
+import { usePostsByTagQuery, usePostsQuery, useSearchPostsQuery, useTagsQuery } from "../features/posts/api/queries.ts"
+import { useUsersQuery } from "../features/user/api/queries.ts"
+import { Post } from "../entities/posts/model/types.ts"
 
 const PostsManager: React.FC = () => {
   useSyncQueryParams()
-  const {
-    skip,
-    limit,
-    searchQuery,
-    setSearchQuery,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
-    selectedTag,
-    setSelectedTag,
-  } = useQueryParamsStore()
+  const { skip, limit, sortBy, sortOrder, searchQuery, selectedTag } = useQueryParamsStore()
 
-  const tags = usePostsStore((state) => state.tags)
   const { setPosts, setTotal, setTags } = usePostsStore()
   const { setShowPostAddDialog } = usePostDialogStore()
 
-  // 상태 관리
-  const [loading, setLoading] = useState(false)
+  // 기본 게시물 쿼리
+  const postsQuery = usePostsQuery(
+    {
+      skip,
+      limit,
+      sortBy,
+      sortOrder,
+    },
+    {
+      enabled: !selectedTag && !searchQuery,
+    },
+  )
 
-  // URL 업데이트 함수
-  // 게시물 가져오기
-  const fetchPosts = () => {
-    setLoading(true)
-    let postsData
-    let usersData
+  const tagsQuery = useTagsQuery()
 
-    fetch(`/api/posts?limit=${limit}&skip=${skip}`)
-      .then((response) => response.json())
-      .then((data) => {
-        postsData = data
-        return fetch("/api/users?limit=0&select=username,image")
-      })
-      .then((response) => response.json())
-      .then((users) => {
-        usersData = users.users
-        const postsWithUsers = postsData.posts.map((post) => ({
-          ...post,
-          author: usersData.find((user) => user.id === post.userId),
-        }))
-        setPosts(postsWithUsers)
-        setTotal(postsData.total)
-      })
-      .catch((error) => {
-        console.error("게시물 가져오기 오류:", error)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+  const postsByTagQuery = usePostsByTagQuery(selectedTag, {
+    enabled: !!selectedTag && !searchQuery,
+  })
+
+  // 검색 쿼리
+  const searchPostsQuery = useSearchPostsQuery(searchQuery, {
+    enabled: !!searchQuery,
+  })
+
+  const usersQuery = useUsersQuery()
+
+  // 사용자 데이터와 게시물 데이터 결합
+  const combinePostsWithUsers = (posts: Post[]) => {
+    return posts.map((post) => ({
+      ...post,
+      author: usersQuery.data?.users?.find((user) => user.id === post.userId),
+    }))
   }
 
-  // 태그 가져오기
-  const fetchTags = async () => {
-    try {
-      const response = await fetch("/api/posts/tags")
-      const data = await response.json()
-      setTags(data)
-    } catch (error) {
-      console.error("태그 가져오기 오류:", error)
+  const setPostsWithUsers = (posts: Post[]) => {
+    setPosts(combinePostsWithUsers(posts))
+  }
+
+  // 태그 데이터 업데이트
+  useEffect(() => {
+    if (tagsQuery.data) {
+      setTags(tagsQuery.data)
     }
-  }
+  }, [tagsQuery.data])
 
-  // 게시물 검색
-  const searchPosts = async () => {
-    if (!searchQuery) {
-      fetchPosts()
+  // 게시물 데이터 업데이트
+  useEffect(() => {
+    if (!usersQuery.data) {
       return
     }
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/posts/search?q=${searchQuery}`)
-      const data = await response.json()
-      setPosts(data.posts)
-      setTotal(data.total)
-    } catch (error) {
-      console.error("게시물 검색 오류:", error)
-    }
-    setLoading(false)
-  }
 
-  // 태그별 게시물 가져오기
-  const fetchPostsByTag = async (tag) => {
-    if (!tag || tag === "all") {
-      fetchPosts()
+    // 검색 결과가 있는 경우
+    if (searchQuery && searchPostsQuery.data) {
+      setPostsWithUsers(searchPostsQuery.data.posts)
+      setTotal(searchPostsQuery.data.total)
       return
     }
-    setLoading(true)
-    try {
-      const [postsResponse, usersResponse] = await Promise.all([
-        fetch(`/api/posts/tag/${tag}`),
-        fetch("/api/users?limit=0&select=username,image"),
-      ])
-      const postsData = await postsResponse.json()
-      const usersData = await usersResponse.json()
 
-      const postsWithUsers = postsData.posts.map((post) => ({
-        ...post,
-        author: usersData.users.find((user) => user.id === post.userId),
-      }))
-
-      setPosts(postsWithUsers)
-      setTotal(postsData.total)
-    } catch (error) {
-      console.error("태그별 게시물 가져오기 오류:", error)
+    // 태그 필터링 결과가 있는 경우
+    if (selectedTag && selectedTag !== "all" && postsByTagQuery.data) {
+      setPostsWithUsers(postsByTagQuery.data.posts)
+      setTotal(postsByTagQuery.data.total)
+      return
     }
-    setLoading(false)
-  }
 
-  useEffect(() => {
-    fetchTags()
-  }, [])
-
-  useEffect(() => {
-    if (selectedTag) {
-      fetchPostsByTag(selectedTag)
-    } else {
-      fetchPosts()
+    // 기본 게시물 목록
+    if (postsQuery.data) {
+      setPostsWithUsers(postsQuery.data.posts)
+      setTotal(postsQuery.data.total)
     }
-  }, [skip, limit, sortBy, sortOrder, selectedTag])
+  }, [postsQuery.data, postsByTagQuery.data, searchPostsQuery.data, selectedTag, searchQuery])
+
+  // 로딩 상태 계산
+  const isLoading =
+    postsQuery.isLoading || tagsQuery.isLoading || postsByTagQuery.isLoading || searchPostsQuery.isLoading
 
   return (
     <Card className="w-full max-w-6xl mx-auto">
@@ -162,61 +115,8 @@ const PostsManager: React.FC = () => {
       <CardContent>
         <div className="flex flex-col gap-4">
           {/* 검색 및 필터 컨트롤 */}
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="게시물 검색..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && searchPosts()}
-                />
-              </div>
-            </div>
-            <Select
-              value={selectedTag}
-              onValueChange={(value) => {
-                setSelectedTag(value)
-                fetchPostsByTag(value)
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="태그 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">모든 태그</SelectItem>
-                {tags.map((tag) => (
-                  <SelectItem key={tag.url} value={tag.slug}>
-                    {tag.slug}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="정렬 기준" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">없음</SelectItem>
-                <SelectItem value="id">ID</SelectItem>
-                <SelectItem value="title">제목</SelectItem>
-                <SelectItem value="reactions">반응</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortOrder} onValueChange={setSortOrder}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="정렬 순서" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">오름차순</SelectItem>
-                <SelectItem value="desc">내림차순</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {loading ? <div className="flex justify-center p-4">로딩 중...</div> : <PostsTable />}
+          <SearchFilters />
+          {isLoading ? <div className="flex justify-center p-4">로딩 중...</div> : <PostsTable />}
           <Pagination />
         </div>
       </CardContent>
