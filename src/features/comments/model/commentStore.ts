@@ -19,13 +19,14 @@ export const useCommentsStore = create<CommentsStoreState & CommentsStoreAction>
   comments: {},
   newComment: { title: " ", body: "", userId: 1 },
   selectedComment: null,
-  setComments: (comments) =>
+  setComments: (comments) => {
     set((state) => ({
-      comments: {
-        ...state.comments,
-        ...comments,
-      },
-    })),
+      comments:
+        typeof comments === 'function'
+          ? comments(state.comments)
+          : comments,
+    }))
+  },
   setNewComment: (newComment) => set({ newComment }),
   setSelectedComment: (selectedComment) => set({ selectedComment }),
 }))
